@@ -68,6 +68,9 @@
   :package-version '(Org . "8.0")
   :type 'symbol)
 
+(defvar org-babel-hy-eoe-indicator "'org_babel_hy_eoe'"
+  "A string to indicate that evaluation has completed.")
+
 (defconst org-babel-hy-wrapper-method
   "
 (defn main []
@@ -102,17 +105,28 @@
   (let* ((org-babel-hy-command
           (or (cdr (assq :hy params))
               org-babel-hy-command))
+         (session (org-babel-python-initiate-session
+                   (cdr (assq :session params))))
          (result-params (cdr (assq :result-params params)))
          (result-type (cdr (assq :result-type params)))
          (full-body (org-babel-expand-body:hy body params))
-         (result (org-babel-hy-evaluate-external-process
-                  full-body result-type result-params)))
+         (result (org-babel-hy-evaluate
+                  session full-body result-type result-params)))
     (org-babel-reassemble-table
      result
      (org-babel-pick-name (cdr (assq :colname-names params))
                           (cdr (assq :colnames params)))
      (org-babel-pick-name (cdr (assq :rowname-names params))
                           (cdr (assq :rownames params))))))
+
+(defun org-babel-hy-evaluate
+    (session body &optional result-type result-params)
+  "Evaluate BODY as Hy code."
+  (if session
+      (org-babel-hy-evaluate-session
+       session body result-type result-params)
+    (org-babel-hy-evaluate-external-process
+     body result-type result-params)))
 
 (defun org-babel-hy-evaluate-external-process
     (body &optional result-type result-params)
@@ -140,15 +154,80 @@ last statement in BODY, as elisp."
       result
       (org-babel-hy-table-or-string result))))
 
-(defun org-babel-prep-session:hy (_session _params)
-  "This function does nothing as hy is a compiled language with no
-support for sessions"
-  (error "Hy is a compiled language -- no support for sessions"))
+(defun org-babel-hy-evaluate-session
+    (session body &optional result-type result-params)
+  "Pass BODY to the Hy process in SESSION.
+If RESULT-TYPE equals `output' then return standard output as a
+string.  If RESULT-TYPE equals `value' then return the value of the
+last statement in BODY, as elisp."
+  (let* ((send-wait (lambda () (comint-send-input nil t) (sleep-for 0 5)))
+         (dump-last-value
+          (lambda
+            (tmp-file pp)
+            (mapc
+             (lambda (statement) (insert statement) (funcall send-wait))
+             (if pp
+                 (list
+                  "(import pprint)"
+                  (format "(with [f (open \"%s\" \"w\")] (.write f (.pformat pprint (_))))"
+                   (org-babel-process-file-name tmp-file 'noquote)))
+               (list (format "(with [f (open \"%s\" \"w\")] (.write f (str (main))))"
+                             (org-babel-process-file-name tmp-file 'noquote)))))))
+         (input-body (lambda (body)
+                       (mapc (lambda (line) (insert line) (funcall send-wait))
+                             (split-string body "[\r\n]"))
+                       (funcall send-wait)))
+         (results
+          (pcase result-type
+            (`output
+             (mapconcat
+              #'org-trim
+              (butlast
+               (org-babel-comint-with-output
+                   (session org-babel-hy-eoe-indicator t body)
+                 (funcall input-body body)
+                 (funcall send-wait) (funcall send-wait)
+                 (insert org-babel-hy-eoe-indicator)
+                 (funcall send-wait))
+               2) "\n"))
+            (`value
+             (let ((tmp-file (org-babel-temp-file "hy-")))
+               (org-babel-comint-with-output
+                   (session org-babel-hy-eoe-indicator nil body)
+                 (let ((comint-process-echoes nil))
+                   (funcall input-body body)
+                   (funcall dump-last-value tmp-file
+                            (member "pp" result-params))
+                   (funcall send-wait) (funcall send-wait)
+                   (insert org-babel-hy-eoe-indicator)
+                   (funcall send-wait)))
+               (org-babel-eval-read-file tmp-file))))))
+    (unless (string= (substring org-babel-hy-eoe-indicator 1 -1) results)
+      (org-babel-result-cond result-params
+        results
+        (org-babel-hy-table-or-string results)))))
 
-(defun org-babel-load-session:hy (_session _body _params)
-  "This function does nothing as hy is a compiled language with no
-support for sessions"
-  (error "Hy is a compiled language -- no support for sessions"))
+(defun org-babel-prep-session:hy (session params)
+  "Prepare SESSION according to the header arguments in PARAMS.
+VARS contains resolved variable references"
+  (let* ((session (org-babel-hy-initiate-session session))
+         (var-lines
+          (org-babel-variable-assignments:hy params)))
+    (org-babel-comint-in-buffer session
+      (mapc (lambda (var)
+              (end-of-line 1) (insert var) (comint-send-input)
+              (org-babel-comint-wait-for-output session)) var-lines))
+    session))
+
+(defun org-babel-load-session:hy (session body params)
+  "Load BODY into SESSION."
+  (save-window-excursion
+    (let ((buffer (org-babel-prep-session:hy session params)))
+      (with-current-buffer buffer
+        (goto-char (process-mark (get-buffer-process (current-buffer))))
+        (insert (org-babel-chomp body)))
+      buffer)))
+
 
 ;; helper functions
 
@@ -199,6 +278,56 @@ Emacs-lisp table, otherwise return the results as a string."
                                        (replace-regexp-in-string
                                         "'" "\"" results))))))
      results)))
+
+(defvar org-babel-hy-buffers '((:default . "*Hy*")))
+
+(defun org-babel-hy-session-buffer (session)
+  "Return the buffer associated with SESSION."
+  (cdr (assoc session org-babel-hy-buffers)))
+
+(defun org-babel-hy-with-earmuffs (session)
+  (let ((name (if (stringp session) session (format "%s" session))))
+    (if (and (string= "*" (substring name 0 1))
+	     (string= "*" (substring name (- (length name) 1))))
+	name
+      (format "*%s*" name))))
+
+(defun org-babel-hy-without-earmuffs (session)
+  (let ((name (if (stringp session) session (format "%s" session))))
+    (if (and (string= "*" (substring name 0 1))
+	     (string= "*" (substring name (- (length name) 1))))
+	(substring name 1 (- (length name) 1))
+      name)))
+
+(defvar hy-default-interpreter)
+(defvar hy-which-bufname)
+(defvar hy-shell-buffer-name)
+(defun org-babel-hy-initiate-session-by-key (&optional session)
+  "Initiate a hy session.
+If there is not a current inferior-process-buffer in SESSION
+then create.  Return the initialized session."
+  (if (featurep 'hy-mode)
+      (require 'hy-mode)
+    (error "No function available for running an inferior Python"))
+  (save-window-excursion
+    (let* ((session (if session (intern session) :default))
+           (hy-buffer (org-babel-hy-session-buffer session))
+           (cmd org-babel-hy-command))
+      (unless hy-buffer
+        (setq hy-buffer (org-babel-hy-with-earmuffs session)))
+      (let ((hy-shell-buffer-name
+             (org-babel-hy-without-earmuffs hy-buffer)))
+        (run-hy cmd))
+      (setq org-babel-hy-buffers
+            (cons (cons session hy-buffer)
+                  (assq-delete-all session org-babel-hy-buffers)))
+      session)))
+
+(defun org-babel-hy-initiate-session (&optional session _params)
+  "Create a session named SESSION according to PARAMS."
+  (unless (string= session "none")
+    (org-babel-hy-session-buffer
+     (org-babel-hy-initiate-session-by-key session))))
 
 (provide 'ob-hy)
 ;;; ob-hy.el ends here
