@@ -1,4 +1,4 @@
-#+TITLE ob-hy
+#+TITLE: ob-hy
   
 * Introduction
   :PROPERTIES:
@@ -11,9 +11,6 @@
   #+BEGIN_SRC hy
   "hello world"
   #+END_SRC
-
-  #+RESULTS:
-  : hello world
 
 * Examples
   :PROPERTIES:
