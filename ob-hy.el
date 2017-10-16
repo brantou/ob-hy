@@ -180,7 +180,6 @@ last statement in BODY, as elisp."
                         (lambda (line)
                           (insert (org-babel-chomp line)) (funcall send-wait))
                              (list body))))
-         ;; (eoe-string (format "(print \"%s\")" org-babel-ruby-eoe-indicator))
          (results
           (pcase result-type
             (`output
@@ -189,10 +188,9 @@ last statement in BODY, as elisp."
                     (butlast
                      (org-babel-comint-with-output
                          (session org-babel-hy-eoe-indicator t body)
-                       (funcall send-wait)
                        (funcall input-body body)
                        (insert org-babel-hy-eoe-indicator)
-                       (funcall send-wait) (funcall send-wait))
+                       (funcall send-wait))
                      2) "\n"))
             (`value
              (let ((tmp-file (org-babel-temp-file "hy-")))
@@ -208,8 +206,8 @@ last statement in BODY, as elisp."
                (org-babel-eval-read-file tmp-file))))))
     (unless (string= (substring org-babel-hy-eoe-indicator 1 -1) results)
       (org-babel-result-cond result-params
-        results
-        (org-babel-hy-table-or-string results)))))
+        (org-trim results)
+        (org-babel-hy-table-or-string (org-trim results))))))
 
 (defun org-babel-prep-session:hy (session params)
   "Prepare SESSION according to the header arguments in PARAMS.
@@ -310,7 +308,7 @@ Emacs-lisp table, otherwise return the results as a string."
   "Initiate a hy session.
 If there is not a current inferior-process-buffer in SESSION
 then create.  Return the initialized session."
-  (if (featurep 'hy-mode)
+  (if (and (featurep 'hy-mode) (fboundp 'run-python))
       (require 'hy-mode)
     (error "No function available for running an inferior Hy"))
   (save-window-excursion
