@@ -68,7 +68,7 @@
   :package-version '(Org . "8.0")
   :type 'symbol)
 
-(defvar org-babel-hy-eoe-indicator "'org_babel_hy_eoe'"
+(defvar org-babel-hy-eoe-indicator ":org_babel_hy_eoe"
   "A string to indicate that evaluation has completed.")
 
 (defconst org-babel-hy-wrapper-method
@@ -105,7 +105,7 @@
   (let* ((org-babel-hy-command
           (or (cdr (assq :hy params))
               org-babel-hy-command))
-         (session (org-babel-python-initiate-session
+         (session (org-babel-hy-initiate-session
                    (cdr (assq :session params))))
          (result-params (cdr (assq :result-params params)))
          (result-type (cdr (assq :result-type params)))
@@ -160,47 +160,51 @@ last statement in BODY, as elisp."
 If RESULT-TYPE equals `output' then return standard output as a
 string.  If RESULT-TYPE equals `value' then return the value of the
 last statement in BODY, as elisp."
-  (let* ((send-wait (lambda () (comint-send-input nil t) (sleep-for 0 5)))
+  (let* ((send-wait (lambda () (comint-send-input nil t)))
          (dump-last-value
           (lambda
             (tmp-file pp)
             (mapc
-             (lambda (statement) (insert statement) (funcall send-wait))
+             (lambda
+               (statement)
+               (insert (org-babel-chomp statement)) (funcall send-wait))
              (if pp
                  (list
                   "(import pprint)"
-                  (format "(with [f (open \"%s\" \"w\")] (.write f (.pformat pprint (_))))"
+                  (format "(with [f (open \"%s\" \"w\")] (.write f (.pformat pprint _)))"
                    (org-babel-process-file-name tmp-file 'noquote)))
-               (list (format "(with [f (open \"%s\" \"w\")] (.write f (str (main))))"
+               (list (format "(with [f (open \"%s\" \"w\")] (.write f (str _)))"
                              (org-babel-process-file-name tmp-file 'noquote)))))))
          (input-body (lambda (body)
-                       (mapc (lambda (line) (insert line) (funcall send-wait))
-                             (split-string body "[\r\n]"))
-                       (funcall send-wait)))
+                       (mapc
+                        (lambda (line)
+                          (insert (org-babel-chomp line)) (funcall send-wait))
+                             (list body))))
+         ;; (eoe-string (format "(print \"%s\")" org-babel-ruby-eoe-indicator))
          (results
           (pcase result-type
             (`output
-             (mapconcat
-              #'org-trim
-              (butlast
-               (org-babel-comint-with-output
-                   (session org-babel-hy-eoe-indicator t body)
-                 (funcall input-body body)
-                 (funcall send-wait) (funcall send-wait)
-                 (insert org-babel-hy-eoe-indicator)
-                 (funcall send-wait))
-               2) "\n"))
+                   (mapconcat
+                    #'org-trim
+                    (butlast
+                     (org-babel-comint-with-output
+                         (session org-babel-hy-eoe-indicator t body)
+                       (funcall send-wait)
+                       (funcall input-body body)
+                       (insert org-babel-hy-eoe-indicator)
+                       (funcall send-wait) (funcall send-wait))
+                     2) "\n"))
             (`value
              (let ((tmp-file (org-babel-temp-file "hy-")))
                (org-babel-comint-with-output
-                   (session org-babel-hy-eoe-indicator nil body)
+                   (session org-babel-hy-eoe-indicator t body)
                  (let ((comint-process-echoes nil))
+                   (funcall send-wait)
                    (funcall input-body body)
                    (funcall dump-last-value tmp-file
                             (member "pp" result-params))
-                   (funcall send-wait) (funcall send-wait)
                    (insert org-babel-hy-eoe-indicator)
-                   (funcall send-wait)))
+                   (funcall send-wait) (funcall send-wait)))
                (org-babel-eval-read-file tmp-file))))))
     (unless (string= (substring org-babel-hy-eoe-indicator 1 -1) results)
       (org-babel-result-cond result-params
@@ -308,7 +312,7 @@ If there is not a current inferior-process-buffer in SESSION
 then create.  Return the initialized session."
   (if (featurep 'hy-mode)
       (require 'hy-mode)
-    (error "No function available for running an inferior Python"))
+    (error "No function available for running an inferior Hy"))
   (save-window-excursion
     (let* ((session (if session (intern session) :default))
            (hy-buffer (org-babel-hy-session-buffer session))
