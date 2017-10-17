@@ -12,6 +12,9 @@
   "hello world"
   #+END_SRC
 
+  #+RESULTS:
+  : hello world
+
 * Examples
   :PROPERTIES:
   :ID:       98dc532f-d354-4d5e-a4ba-2489ad02730b
