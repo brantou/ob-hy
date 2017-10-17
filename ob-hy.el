@@ -88,7 +88,7 @@
 
 (defun org-babel-expand-body:hy (body params)
   "Expand BODY according to PARAMS, return the expanded body."
-  (let* ((vars (org-babel--get-vars params))
+  (let* ((vars (org-babel-hy-get-vars params))
          (body (if (null vars) (org-trim body)
                  (concat
                          (mapconcat
@@ -230,6 +230,13 @@ VARS contains resolved variable references"
         (insert (org-babel-chomp body)))
       buffer)))
 
+(defun org-babel-hy-get-vars (params)
+  "org-babel-get-header was removed in org version 8.3.3"
+  (let* ((fversion (org-version))
+         (version (string-to-int fversion)))
+    (if (< version 8.3)
+        (mapcar #'cdr (org-babel-get-header params :var))
+      (org-babel--get-vars params))))
 
 ;; helper functions
 
@@ -240,7 +247,7 @@ VARS contains resolved variable references"
      (format "%s=%s"
              (car pair)
              (org-babel-hy-var-to-hy (cdr pair))))
-   (org-babel--get-vars params)))
+   (org-babel-hy-get-vars params)))
 
 (defun org-babel-hy-var-to-hy (var)
   "Convert VAR into a hy variable.
@@ -280,6 +287,8 @@ Emacs-lisp table, otherwise return the results as a string."
                                        (replace-regexp-in-string
                                         "'" "\"" results))))))
      results)))
+
+;; session helper functions
 
 (defvar org-babel-hy-buffers '((:default . "*Hy*")))
 

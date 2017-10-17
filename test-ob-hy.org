@@ -1,0 +1,87 @@
+# -*- org-confirm-babel-evaluate: nil -*-
+#+OPTIONS: ^:nil
+
+* No session
+  :PROPERTIES:
+  :ID:       37bab689-027c-4189-9abc-9a993da1c099
+  :END:
+** return type
+   :PROPERTIES:
+   :ID:       977ba858-a4aa-4108-8e61-43dd880d5b08
+   :END:
+   #+NAME: ns-rt-value
+   #+BEGIN_SRC hy :results value
+     "ob-hy"
+   #+END_SRC
+
+   #+RESULTS: ns-rt-value
+   : ob-hy
+
+   #+NAME: ns-rt-output
+   #+BEGIN_SRC hy :results output
+     (print "ob-hy")
+   #+END_SRC
+
+   #+RESULTS: ns-rt-output
+   : ob-hy
+
+** variable
+   :PROPERTIES:
+   :ID:       1f5d82ee-93a4-4821-85fb-c855188beb65
+   :END:
+
+    #+NAME: ns-variable-int
+    #+BEGIN_SRC hy :results value :var x=5
+      x
+    #+END_SRC
+
+    #+RESULTS: ns-variable-int
+    : 5
+
+    #+NAME: ns-variable-str
+    #+BEGIN_SRC hy :results value :var str="ob-hy"
+      str
+    #+END_SRC
+
+    #+RESULTS: ns-variable-str
+    : ob-hy
+
+    #+NAME: ns-variable-list
+    #+BEGIN_SRC hy :results value silent :var list='("a" "b" "c")
+      list
+    #+END_SRC
+
+    #+NAME: num-tb
+    | 1 | 2 |
+    |---+---|
+    | 3 | 4 |
+
+    #+NAME: ns-variable-tb
+    #+BEGIN_SRC hy :results value :var tb=num-tb :colnames no
+      tb
+    #+END_SRC
+
+    #+NAME: ns-multi-variables
+    #+BEGIN_SRC hy :results value :var x=3 y=4 z=5
+      (+ x y z)
+    #+END_SRC
+
+    #+RESULTS: ns-multi-variables
+    : 12
+
+* Test
+  :PROPERTIES:
+  :ID:       0f17afd6-27b4-4186-aeb5-e0dd2b99a8fc
+  :END:
+
+  #+NAME: ob-hy-tests
+  | functionality                     | block              | arg | expected      | results             | pass                                                               |
+  |-----------------------------------+--------------------+-----+---------------+---------------------+--------------------------------------------------------------------|
+  | return-type   : no session value  | ns-rt-value        |     | ob-hy         | ob-hy               | pass                                                               |
+  | return-type   : no session output | ns-rt-output       |     | ob-hy         | ob-hy               | pass                                                               |
+  | variable-int  : no session        | ns-variable-int    |     | 5             | 5                   | pass                                                               |
+  | variable-str  : no session        | ns-variable-str    |     | ob-hy         | ob-hy               | pass                                                               |
+  | variable-list : no session        | ns-variable-list   |     | ("a" "b" "c") | (u "a" u "b" u "c") | expected "(\"a\" \"b\" \"c\")" but was "(u \"a\" u \"b\" u \"c\")" |
+  | variable-tb   : no session        | ns-variable-tb     |     | ((1 2) (3 4)) | ((1L 2L) (3L 4L))   | expected "((1 2) (3 4))" but was "((1L 2L) (3L 4L))"               |
+  | variable-multi: no session        | ns-multi-variables |     | 12            | 12                  | pass                                                               |
+  #+TBLFM: $5='(org-sbe $2) :: $6='(if (string= $4 $5) "pass" (format "expected %S but was %S" $4 $5))
