@@ -7,6 +7,7 @@
 ;; Keywords: hy, literate programming, reproducible research
 ;; Homepage: http://orgmode.org
 ;; Version:  1.0.0
+;; Package-Requires: ((emacs "24.4"))
 
 ;;; License:
 
@@ -187,7 +188,8 @@ last statement in BODY, as elisp."
          (results
           (pcase result-type
             (`output
-             (mapconcat
+             (replace-regexp-in-string "=> " ""
+              (mapconcat
               #'org-trim
               (butlast
                (org-babel-comint-with-output
@@ -195,7 +197,7 @@ last statement in BODY, as elisp."
                  (funcall input-body body)
                  (insert org-babel-hy-eoe-indicator)
                  (funcall send-wait))
-               2) "\n"))
+               2) "\n")))
             (`value
              (let ((tmp-file (org-babel-temp-file "hy-")))
                (org-babel-comint-with-output

@@ -47,9 +47,12 @@
     : ob-hy
 
     #+NAME: ns-variable-list
-    #+BEGIN_SRC hy :results value silent :var list='("a" "b" "c")
+    #+BEGIN_SRC hy :results value raw :var list='("a" "b" "c")
       list
     #+END_SRC
+
+    #+RESULTS: ns-variable-list
+    (u'a' u'b' u'c')
 
     #+NAME: num-tb
     | 1 | 2 |
@@ -57,9 +60,12 @@
     | 3 | 4 |
 
     #+NAME: ns-variable-tb
-    #+BEGIN_SRC hy :results value :var tb=num-tb :colnames no
+    #+BEGIN_SRC hy :results value raw :var tb=num-tb :colnames no
       tb
     #+END_SRC
+
+    #+RESULTS: ns-variable-tb
+    ((1L 2L) (3L 4L))
 
     #+NAME: ns-multi-variables
     #+BEGIN_SRC hy :results value :var x=3 y=4 z=5
@@ -67,6 +73,83 @@
     #+END_SRC
 
     #+RESULTS: ns-multi-variables
+    : 12
+
+* Session
+  :PROPERTIES:
+  :ID:       fe04c2ad-1df7-4708-aca7-3f139e854f88
+  :END:
+
+** return type
+   :PROPERTIES:
+   :ID:       9b2000b6-97e1-4015-9db9-f97e39d82bf2
+   :END:
+   #+NAME: s-rt-value
+   #+BEGIN_SRC hy :results value :session
+     "ob-hy"
+   #+END_SRC
+
+   #+RESULTS: s-rt-value
+   : ob-hy
+
+   #+NAME: s-rt-output
+   #+BEGIN_SRC hy :results output :session
+     (print "ob-hy")
+   #+END_SRC
+
+   #+RESULTS: s-rt-output
+   : ob-hy
+
+   #+BEGIN_SRC elisp :results value
+     (replace-regexp-in-string "=> " "" "=> => => ob-hy")
+   #+END_SRC
+
+   #+RESULTS:
+   : ob-hy
+
+** variable
+   :PROPERTIES:
+   :ID:       4f83532c-0db3-4b39-8c91-b83bc106ee64
+   :END:
+
+   #+NAME: s-variable-int
+   #+BEGIN_SRC hy :results value :var x=5 :session
+     x
+   #+END_SRC
+
+   #+RESULTS: s-variable-int
+   : 5
+
+   #+NAME: s-variable-str
+   #+BEGIN_SRC hy :results value :var strVar="ob-hy" :session
+     strVar
+   #+END_SRC
+
+   #+RESULTS: s-variable-str
+   : ob-hy
+
+    #+NAME: s-variable-list
+    #+BEGIN_SRC hy :results value raw :var list='("a" "b" "c") :session
+      list
+    #+END_SRC
+
+    #+RESULTS: s-variable-list
+    (u'a' u'b' u'c')
+
+    #+NAME: s-variable-tb
+    #+BEGIN_SRC hy :results value raw :var tb=num-tb :colnames no :session
+      tb
+    #+END_SRC
+
+    #+RESULTS: s-variable-tb
+    ((1L 2L) (3L 4L))
+
+    #+NAME: s-multi-variables
+    #+BEGIN_SRC hy :results value :var x=3 y=4 z=5 :session
+      (+ x y z)
+    #+END_SRC
+
+    #+RESULTS: s-multi-variables
     : 12
 
 * Test

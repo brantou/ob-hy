@@ -77,6 +77,18 @@
    : #+RESULTS:
    : : 25
 
+   #+BEGIN_SRC hy :session hylang :results output
+     (print "hello world")
+     (defn square [x]
+       (* x x))
+
+     (print (square 5))
+   #+END_SRC
+
+   #+RESULTS:
+   : hello world
+   : ... 25
+
 * Running tests
   :PROPERTIES:
   :ID:       82cd12e6-b401-439a-9da5-03f0cf6e8e89
