@@ -8,8 +8,8 @@
   =ob-hy= enables [[http://orgmode.org/worg/org-contrib/babel/intro.html][Org-Babel]] support for evaluating [[http://hylang.org/][Hy]] code.
   It was created based on the usage of [[./ob-template.el][ob-template]].
 
-  #+BEGIN_SRC hy
-  "hello world"
+  #+BEGIN_SRC hy :results output
+    (print "hello world")
   #+END_SRC
 
   #+RESULTS:
@@ -33,25 +33,25 @@
    :PROPERTIES:
    :ID:       7beff92a-3dc6-47ad-9898-0dbbad5b090f
    :END:
-  #+NAME: tel-note
-  | name  |    tel |
-  |-------+--------|
-  | brant | 170... |
-  | ou    | 138... |
+  : #+NAME: tel-note
+  : | name  |    tel |
+  : |-------+--------|
+  : | brant | 170... |
+  : | ou    | 138... |
 
-  #+BEGIN_SRC hy :var tb=tel-note :results output table
-    (print tb)
-  #+END_SRC
+  : #+BEGIN_SRC hy :var tb=tel-note :results output table
+  :   (print tb)
+  : #+END_SRC
 
-  #+RESULTS:
-  : ((u'brant' u'170...') (u'ou' u'138...'))
+  : #+RESULTS:
+  : : ((u'brant' u'170...') (u'ou' u'138...'))
 
-  #+BEGIN_SRC hy :var lst='("1" "2" "3") :results output
-    (print lst)
-  #+END_SRC
+  : #+BEGIN_SRC hy :var lst='("1" "2" "3") :results output
+  :   (print lst)
+  : #+END_SRC
 
-  #+RESULTS:
-  : (u'1' u'2' u'3')
+  : #+RESULTS:
+  : : (u'1' u'2' u'3')
 
 ** literate programming
    :PROPERTIES:
@@ -77,17 +77,19 @@
    : #+RESULTS:
    : : 25
 
-   #+BEGIN_SRC hy :session hylang :results output
-     (print "hello world")
-     (defn square [x]
-       (* x x))
 
-     (print (square 5))
-   #+END_SRC
+** session
+   : #+BEGIN_SRC hy :session hylang :results output
+   :   (print "hello world")
+   :   (defn square [x]
+   :     (* x x))
 
-   #+RESULTS:
-   : hello world
-   : ... 25
+   :   (print (square 5))
+   : #+END_SRC
+
+   : #+RESULTS:
+   : : hello world
+   : : ... 25
 
 * Running tests
   :PROPERTIES:
