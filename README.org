@@ -1,5 +1,6 @@
 #+TITLE: ob-hy
 [[https://travis-ci.org/brantou/ob-hy][file:https://travis-ci.org/brantou/ob-hy.svg?branch=master]]
+[[https://melpa.org/#/ob-hy][file:https://melpa.org/packages/ob-hy-badge.svg]]
 * Introduction
   :PROPERTIES:
   :ID:       614a110c-77b2-41f8-9714-ce311ff1acb0
