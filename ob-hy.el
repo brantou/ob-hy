@@ -1,4 +1,4 @@
-;;; ob-hy.el --- org-babel functions for Hy evaluation
+;;; ob-hy.el --- org-babel functions for Hy-lang evaluation
 
 ;; Copyright (C) 2017 Brantou
 
@@ -30,7 +30,7 @@
 
 ;;; Commentary:
 ;;
-;; Org-Babel support for evaluating hy-script code.
+;; Org-Babel support for evaluating hy-lang code.
 ;;
 ;; It was created based on the usage of ob-template.
 ;;
