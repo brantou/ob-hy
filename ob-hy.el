@@ -236,15 +236,13 @@ VARS contains resolved variable references"
         (insert (org-babel-chomp body)))
       buffer)))
 
+;; helper functions
+
 (defun org-babel-hy-get-vars (params)
   "org-babel-get-header was removed in org version 8.3.3"
-  (let* ((fversion (org-version))
-         (version (string-to-int fversion)))
-    (if (< version 8.3)
-        (mapcar #'cdr (org-babel-get-header params :var))
-      (org-babel--get-vars params))))
-
-;; helper functions
+  (if (fboundp 'org-babel-get-header)
+      (mapcar #'cdr (org-babel-get-header params :var))
+    (org-babel--get-vars params)))
 
 (defun org-babel-variable-assignments:hy (params)
   "Return list of hy statements assigning the block's variables."
