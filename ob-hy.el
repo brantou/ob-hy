@@ -1,4 +1,4 @@
-;;; ob-hy.el --- org-babel functions for Hy evaluation
+;;; ob-hy.el --- org-babel functions for Hy-lang evaluation
 
 ;; Copyright (C) 2017 Brantou
 
@@ -7,6 +7,7 @@
 ;; Keywords: hy, literate programming, reproducible research
 ;; Homepage: http://orgmode.org
 ;; Version:  1.0.0
+;; Package-Requires: ((emacs "24.4"))
 
 ;;; License:
 
@@ -29,7 +30,7 @@
 
 ;;; Commentary:
 ;;
-;; Org-Babel support for evaluating hy-script code.
+;; Org-Babel support for evaluating hy-lang code.
 ;;
 ;; It was created based on the usage of ob-template.
 ;;
@@ -37,6 +38,9 @@
 ;;; Requirements:
 ;;
 ;; - hy :: https://hy-lang.org/
+;;
+;; - hy-mode :: Can be installed through from ELPA, or from
+;;   https://raw.githubusercontent.com/hylang/hy-mode/master/hy-mode.el
 ;;
 
 ;;; TODO
@@ -47,6 +51,7 @@
 ;;; Code:
 (require 'ob)
 (require 'ob-eval)
+(require 'ob-tangle)
 
 (defvar org-babel-tangle-lang-exts)
 (add-to-list 'org-babel-tangle-lang-exts '("hy" . "hy"))
@@ -74,7 +79,7 @@
 (defconst org-babel-hy-wrapper-method
   "
 (defn main []
-%s)
+  %s)
 
 (with [f (open \"%s\" \"w\")] (.write f (str (main))))")
 
@@ -82,7 +87,7 @@
   "
 (import pprint)
 (defn main []
-%s)
+  %s)
 
 (with [f (open \"%s\" \"w\")] (.write f (.pformat pprint (main))))")
 
@@ -91,11 +96,11 @@
   (let* ((vars (org-babel-hy-get-vars params))
          (body (if (null vars) (org-trim body)
                  (concat
-                         (mapconcat
-                          (lambda (var)
-                            (format "(setv %S (quote %S))" (car var) (cdr var)))
-                          vars "\n")
-                         "\n" body))))
+                  (mapconcat
+                   (lambda (var)
+                     (format "(setv %S (quote %S))" (car var) (cdr var)))
+                   vars "\n")
+                  "\n" body))))
     body))
 
 (defun org-babel-execute:hy (body params)
@@ -135,21 +140,21 @@ If RESULT-TYPE equals `output' then return standard output as a
 string.  If RESULT-TYPE equals `value' then return the value of the
 last statement in BODY, as elisp."
   (let ((result
-             (pcase result-type
-               (`output (org-babel-eval
-                         (format "%s -c '%s'" org-babel-hy-command body) ""))
-               (`value (let ((tmp-file (org-babel-temp-file "hy-")))
-                         (org-babel-eval
-                        (format
-                         "%s -c '%s'"
-                         org-babel-hy-command
-                         (format
-                          (if (member "pp" result-params)
-                              org-babel-hy-pp-wrapper-method
-                            org-babel-hy-wrapper-method)
-                          body
-                          (org-babel-process-file-name tmp-file 'noquote))) "")
-                         (org-babel-eval-read-file tmp-file))))))
+         (pcase result-type
+           (`output (org-babel-eval
+                     (format "%s -c '%s'" org-babel-hy-command body) ""))
+           (`value (let ((tmp-file (org-babel-temp-file "hy-")))
+                     (org-babel-eval
+                      (format
+                       "%s -c '%s'"
+                       org-babel-hy-command
+                       (format
+                        (if (member "pp" result-params)
+                            org-babel-hy-pp-wrapper-method
+                          org-babel-hy-wrapper-method)
+                        body
+                        (org-babel-process-file-name tmp-file 'noquote))) "")
+                     (org-babel-eval-read-file tmp-file))))))
     (org-babel-result-cond result-params
       result
       (org-babel-hy-table-or-string result))))
@@ -172,27 +177,28 @@ last statement in BODY, as elisp."
                  (list
                   "(import pprint)"
                   (format "(with [f (open \"%s\" \"w\")] (.write f (.pformat pprint _)))"
-                   (org-babel-process-file-name tmp-file 'noquote)))
+                          (org-babel-process-file-name tmp-file 'noquote)))
                (list (format "(with [f (open \"%s\" \"w\")] (.write f (str _)))"
                              (org-babel-process-file-name tmp-file 'noquote)))))))
          (input-body (lambda (body)
                        (mapc
                         (lambda (line)
                           (insert (org-babel-chomp line)) (funcall send-wait))
-                             (list body))))
+                        (list body))))
          (results
           (pcase result-type
             (`output
-                   (mapconcat
-                    #'org-trim
-                    (butlast
-                     (org-babel-comint-with-output
-                         (session org-babel-hy-eoe-indicator t body)
-                       (funcall input-body body)
-                       (insert (format "(import builtins)\n(builtins.print \"%s\")"
+             (replace-regexp-in-string "=> " ""
+              (mapconcat
+              #'org-trim
+              (butlast
+               (org-babel-comint-with-output
+                   (session org-babel-hy-eoe-indicator t body)
+                 (funcall input-body body)
+                 (insert (format "(import builtins)\n(builtins.print \"%s\")"
                                        org-babel-hy-eoe-indicator))
-                       (funcall send-wait))
-                     2) "\n"))
+                 (funcall send-wait))
+               2) "\n")))
             (`value
              (let ((tmp-file (org-babel-temp-file "hy-")))
                (org-babel-comint-with-output
@@ -232,14 +238,13 @@ VARS contains resolved variable references"
         (insert (org-babel-chomp body)))
       buffer)))
 
+;; helper functions
+
 (defun org-babel-hy-get-vars (params)
   "org-babel-get-header was removed in org version 8.3.3"
-  (if (string-version-lessp (org-version) "8.3")
-      (mapcar #'cdr
-              (org-babel-get-header params :var))
+  (if (fboundp 'org-babel-get-header)
+      (mapcar #'cdr (org-babel-get-header params :var))
     (org-babel--get-vars params)))
-
-;; helper functions
 
 (defun org-babel-variable-assignments:hy (params)
   "Return list of hy statements assigning the block's variables."
@@ -300,15 +305,15 @@ Emacs-lisp table, otherwise return the results as a string."
 (defun org-babel-hy-with-earmuffs (session)
   (let ((name (if (stringp session) session (format "%s" session))))
     (if (and (string= "*" (substring name 0 1))
-	     (string= "*" (substring name (- (length name) 1))))
-	name
+             (string= "*" (substring name (- (length name) 1))))
+        name
       (format "*%s*" name))))
 
 (defun org-babel-hy-without-earmuffs (session)
   (let ((name (if (stringp session) session (format "%s" session))))
     (if (and (string= "*" (substring name 0 1))
-	     (string= "*" (substring name (- (length name) 1))))
-	(substring name 1 (- (length name) 1))
+             (string= "*" (substring name (- (length name) 1))))
+        (substring name 1 (- (length name) 1))
       name)))
 
 (defvar hy-default-interpreter)
