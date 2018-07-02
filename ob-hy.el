@@ -189,7 +189,8 @@ last statement in BODY, as elisp."
                      (org-babel-comint-with-output
                          (session org-babel-hy-eoe-indicator t body)
                        (funcall input-body body)
-                       (insert org-babel-hy-eoe-indicator)
+                       (insert (format "(import builtins)\n(builtins.print \"%s\")"
+                                       org-babel-hy-eoe-indicator))
                        (funcall send-wait))
                      2) "\n"))
             (`value
@@ -201,7 +202,8 @@ last statement in BODY, as elisp."
                    (funcall input-body body)
                    (funcall dump-last-value tmp-file
                             (member "pp" result-params))
-                   (insert org-babel-hy-eoe-indicator)
+                   (insert (format "(import builtins)\n(builtins.print \"%s\")"
+                                   org-babel-hy-eoe-indicator))
                    (funcall send-wait) (funcall send-wait)))
                (org-babel-eval-read-file tmp-file))))))
     (unless (string= (substring org-babel-hy-eoe-indicator 1 -1) results)
@@ -232,11 +234,10 @@ VARS contains resolved variable references"
 
 (defun org-babel-hy-get-vars (params)
   "org-babel-get-header was removed in org version 8.3.3"
-  (let* ((fversion (org-version))
-         (version (string-to-int fversion)))
-    (if (< version 8.3)
-        (mapcar #'cdr (org-babel-get-header params :var))
-      (org-babel--get-vars params))))
+  (if (string-version-lessp (org-version) "8.3")
+      (mapcar #'cdr
+              (org-babel-get-header params :var))
+    (org-babel--get-vars params)))
 
 ;; helper functions
 
