@@ -18,11 +18,13 @@ before_install:
       sudo apt-get -qq install emacs24 emacs24-el curl org-mode;
     fi
   - if [ "$EMACS" = "emacs25" ]; then
+      sudo add-apt-repository ppa:kelleyk/emacs
       sudo apt-get -qq update &&
       sudo apt-get -qq -f install &&
       sudo apt-get -qq install emacs25 emacs25-el;
     fi
   - if [ "$EMACS" = "emacs26" ]; then
+      sudo add-apt-repository ppa:kelleyk/emacs
       sudo apt-get -qq update &&
       sudo apt-get -qq -f install &&
       sudo apt-get -qq install emacs26 emacs26-el;
