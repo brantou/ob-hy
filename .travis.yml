@@ -9,6 +9,8 @@ env:
 
 matrix:
   allow_failures:
+    - env: EMACS=emacs25
+    - env: EMACS=emacs26
     - env: EMACS=emacs-snapshot
 
 before_install:
