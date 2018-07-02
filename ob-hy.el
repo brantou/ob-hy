@@ -6,7 +6,7 @@
 ;; URL: https://github.com/brantou/ob-hy
 ;; Keywords: hy, literate programming, reproducible research
 ;; Homepage: http://orgmode.org
-;; Version:  1.0.0
+;; Version:  1.0.1
 ;; Package-Requires: ((emacs "24.4"))
 
 ;;; License:
